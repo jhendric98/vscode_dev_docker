@@ -12,6 +12,9 @@ This project is to track the Dockerfiles for use in Spark development. This assu
 2. Start VSCode using: code .
 3. Once the IDE launches you should get a prompt to Reopen in the container.
 4. Continue development setup as needed. 
+5. Once the container is launched, you can start a Spark local cluster as follows:
+    a. start-master.sh
+    b. start-workers.sh spark://localhost:7077
 
 ## TODO
 1. Create release tags for each cloud environment.
