@@ -1,0 +1,217 @@
+---
+name: Docker Build and Test
+
+'on':
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: spark-dev
+  SPARK_VERSION: 4.0.1
+  HADOOP_VERSION: 3
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:test
+          build-args: |
+            SPARK_VERSION=${{ env.SPARK_VERSION }}
+            HADOOP_VERSION=${{ env.HADOOP_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          echo "Testing Docker image..."
+
+          # Test 1: Container starts successfully
+          docker run --rm ${{ env.IMAGE_NAME }}:test \
+            echo "✅ Container starts successfully"
+
+          # Test 2: Verify Java installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test java -version
+
+          # Test 3: Verify Scala installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test scala -version
+
+          # Test 4: Verify Python installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test python3 --version
+
+          # Test 5: Verify Spark installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test \
+            spark-submit --version
+
+          # Test 6: Verify SBT installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test sbt --version
+
+          # Test 7: Verify Maven installation
+          docker run --rm ${{ env.IMAGE_NAME }}:test mvn --version
+
+          # Test 8: Verify non-root user
+          docker run --rm ${{ env.IMAGE_NAME }}:test \
+            whoami | grep -q sparkuser
+          echo "✅ Container runs as non-root user"
+
+          # Test 9: Verify Spark home is set
+          docker run --rm ${{ env.IMAGE_NAME }}:test \
+            bash -c \
+            '[ -n "$SPARK_HOME" ] && echo "✅ SPARK_HOME is set"'
+
+          # Test 10: Test simple Spark job
+          docker run --rm ${{ env.IMAGE_NAME }}:test \
+            spark-submit --version
+
+          echo "🎉 All tests passed!"
+
+      - name: Run Spark example test
+        run: |
+          # Create a simple test script
+          cat > /tmp/test_spark.py << 'EOF'
+          from pyspark.sql import SparkSession
+
+          spark = SparkSession.builder \
+            .appName("CI Test").master("local[*]").getOrCreate()
+          spark.sparkContext.setLogLevel("ERROR")
+
+          # Simple test
+          data = [("Alice", 25), ("Bob", 30)]
+          df = spark.createDataFrame(data, ["name", "age"])
+          count = df.count()
+
+          assert count == 2, f"Expected 2 rows, got {count}"
+          print("✅ Spark test passed!")
+
+          spark.stop()
+          EOF
+
+          # Run the test
+          docker run --rm \
+            -v /tmp/test_spark.py:/tmp/test_spark.py \
+            ${{ env.IMAGE_NAME }}:test \
+            spark-submit /tmp/test_spark.py
+
+      - name: Check image size
+        run: |
+          SIZE=$(docker images \
+            ${{ env.IMAGE_NAME }}:test --format "{{.Size}}")
+          echo "📦 Image size: $SIZE"
+
+          # Log the size for monitoring
+          docker images ${{ env.IMAGE_NAME }}:test \
+            --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+
+      - name: Inspect image layers
+        run: |
+          echo "🔍 Inspecting image layers..."
+          docker history ${{ env.IMAGE_NAME }}:test \
+            --no-trunc \
+            --format "table {{.CreatedBy}}\t{{.Size}}"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build image for scanning
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:scan
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner (table format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:scan
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+  lint:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+  markdown-lint:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: nosborn/github-action-markdown-cli@v3.3.0
+        with:
+          files: .
+          config_file: .markdownlint.json
+          ignore_files: node_modules/
+        continue-on-error: true
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build, security-scan, lint]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🎉 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Spark Version**: \
+            ${{ env.SPARK_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Hadoop Version**: \
+            ${{ env.HADOOP_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base Image**: \
+            Ubuntu 22.04 LTS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Build: \
+            ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Scan: \
+            ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Lint: ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
