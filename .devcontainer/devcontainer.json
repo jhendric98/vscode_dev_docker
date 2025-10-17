@@ -1,0 +1,172 @@
+{
+	"name": "Apache Spark Development",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"context": "..",
+		"args": {
+			"SPARK_VERSION": "4.0.1",
+			"HADOOP_VERSION": "3"
+		}
+	},
+
+	// Container user settings
+	"remoteUser": "sparkuser",
+	"containerUser": "sparkuser",
+	"updateRemoteUserUID": true,
+
+	// Port forwarding for Spark UIs and services
+	"forwardPorts": [
+		4040,  // Spark Application UI
+		7077,  // Spark Master
+		8080,  // Spark Master Web UI
+		8081,  // Spark Worker Web UI
+		18080  // Spark History Server
+	],
+
+	// Port labels for clarity
+	"portsAttributes": {
+		"4040": {
+			"label": "Spark Application UI",
+			"onAutoForward": "notify"
+		},
+		"7077": {
+			"label": "Spark Master",
+			"onAutoForward": "silent"
+		},
+		"8080": {
+			"label": "Spark Master Web UI",
+			"onAutoForward": "notify"
+		},
+		"8081": {
+			"label": "Spark Worker Web UI",
+			"onAutoForward": "notify"
+		},
+		"18080": {
+			"label": "Spark History Server",
+			"onAutoForward": "notify"
+		}
+	},
+
+	// Mount the workspace and additional volumes
+	"mounts": [
+		"source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+	],
+
+	// VS Code settings
+	"customizations": {
+		"vscode": {
+			// Extensions to install
+			"extensions": [
+				// Scala support
+				"scalameta.metals",
+				"scala-lang.scala",
+				
+				// Python support
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter",
+				
+				// Java support
+				"vscjava.vscode-java-pack",
+				
+				// Git and version control
+				"eamodio.gitlens",
+				"mhutchie.git-graph",
+				
+				// Docker
+				"ms-azuretools.vscode-docker",
+				
+				// Code quality
+				"editorconfig.editorconfig",
+				"streetsidesoftware.code-spell-checker",
+				
+				// Productivity
+				"gruntfuggly.todo-tree",
+				"wayou.vscode-todo-highlight"
+			],
+
+			// VS Code settings
+			"settings": {
+				// General
+				"files.eol": "\n",
+				"files.insertFinalNewline": true,
+				"files.trimTrailingWhitespace": true,
+				"editor.formatOnSave": true,
+				"editor.rulers": [80, 120],
+				
+				// Scala (Metals)
+				"metals.javaHome": "/usr/lib/jvm/java-11-openjdk-amd64",
+				"metals.sbtScript": "/usr/bin/sbt",
+				
+				// Python
+				"python.defaultInterpreterPath": "/usr/bin/python3",
+				"python.linting.enabled": true,
+				"python.linting.pylintEnabled": true,
+				"python.linting.flake8Enabled": true,
+				"python.formatting.provider": "black",
+				"python.testing.pytestEnabled": true,
+				
+				// Java
+				"java.home": "/usr/lib/jvm/java-11-openjdk-amd64",
+				"java.configuration.runtimes": [
+					{
+						"name": "JavaSE-11",
+						"path": "/usr/lib/jvm/java-11-openjdk-amd64",
+						"default": true
+					}
+				],
+				
+				// Terminal
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"terminal.integrated.profiles.linux": {
+					"bash": {
+						"path": "/bin/bash"
+					}
+				},
+				
+				// File associations
+				"files.associations": {
+					"*.scala": "scala",
+					"*.sc": "scala",
+					"*.sbt": "scala"
+				}
+			}
+		}
+	},
+
+	// Post create command to set up the environment
+	"postCreateCommand": "bash -c 'echo \"✅ Spark Dev Container Ready!\" && spark-submit --version'",
+
+	// Features to add to the container
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"installOhMyZsh": true,
+			"upgradePackages": true
+		}
+	},
+
+	// Container environment variables
+	"containerEnv": {
+		"SPARK_HOME": "/opt/spark",
+		"JAVA_HOME": "/usr/lib/jvm/java-11-openjdk-amd64"
+	},
+
+	// Run arguments for the container
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt=seccomp=unconfined",
+		"--security-opt=no-new-privileges:true",
+		"--network=host"
+	],
+
+	// Life cycle scripts
+	"initializeCommand": "echo 'Initializing Spark Dev Container...'",
+	"onCreateCommand": "echo 'Container created successfully'",
+	"updateContentCommand": "echo 'Updating container content...'",
+	"postStartCommand": "echo 'Container started. Happy coding! 🚀'"
+}
+
