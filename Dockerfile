@@ -20,10 +20,10 @@ ARG HADOOP_VERSION=3
 ARG SPARK_USER=sparkuser
 ARG SPARK_UID=1000
 ARG SPARK_GID=1000
+ARG TARGETARCH
 
 # Environment variables
 ENV SPARK_HOME=/opt/spark \
-    JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 \
     PATH=/opt/spark/bin:/opt/spark/sbin:$PATH \
     SPARK_USER=${SPARK_USER} \
     PYTHONUNBUFFERED=1
@@ -49,7 +49,7 @@ RUN apt-get update \
         bash-completion \
         git \
         maven \
-        openjdk-11-jdk \
+        openjdk-17-jdk \
         procps \
         python3 \
         python3-pip \
@@ -63,9 +63,15 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Set JAVA_HOME based on the installed architecture
+RUN ARCH=$(dpkg --print-architecture) && \
+    ln -sf /usr/lib/jvm/java-17-openjdk-${ARCH} /usr/lib/jvm/java-17-openjdk
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk \
+    PATH=/usr/lib/jvm/java-17-openjdk/bin:$PATH
+
 # Download and install Apache Spark
-RUN mkdir -p ${SPARK_HOME} \
-    && curl -fsSL "https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
+RUN curl -fsSL "https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
         -o /tmp/spark.tgz \
     && tar -xzf /tmp/spark.tgz -C /opt \
     && mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} ${SPARK_HOME} \
@@ -100,7 +106,7 @@ RUN mkdir -p /workspace \
 # Set up bash completion for spark user
 RUN echo "source /etc/bash_completion" >> /home/${SPARK_USER}/.bashrc \
     && echo "export SPARK_HOME=${SPARK_HOME}" >> /home/${SPARK_USER}/.bashrc \
-    && echo "export JAVA_HOME=${JAVA_HOME}" >> /home/${SPARK_USER}/.bashrc
+    && echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk" >> /home/${SPARK_USER}/.bashrc
 
 # Switch to non-root user
 USER ${SPARK_USER}
