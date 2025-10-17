@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated Apache Spark from 3.5.1 to 4.0.1 (major version upgrade)
+- Updated PySpark to 4.0.1
+- Updated build configurations (SBT, Maven) to Spark 4.0.1
+- Added Spark 4.0 compatibility notes to documentation
+
 ### Planned
 
 - Automated CI/CD pipeline with GitHub Actions
 - Multi-architecture builds (AMD64 and ARM64)
 - Cloud environment profiles (AWS, Azure, GCP)
 - Pre-built Docker Hub images
-- Spark 3.6.x support when released
 
 ---
 
@@ -23,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release of Apache Spark Dev Container for VS Code
 - Ubuntu 22.04 LTS as base image
-- Apache Spark 3.5.1 with Hadoop 3
+- Apache Spark 3.5.1 with Hadoop 3 (now updated to 4.0.1)
 - Java OpenJDK 11
 - Scala 2.13 support
 - Python 3.10+ with pip
@@ -98,7 +104,7 @@ This is the inaugural release of the Apache Spark Development Container, providi
 
 **What's Included:**
 
-- Apache Spark 3.5.1 with Hadoop 3 distribution
+- Apache Spark 4.0.1 with Hadoop 3 distribution
 - Complete Scala development environment (2.13)
 - Python 3 with PySpark support
 - Java 11 runtime environment
@@ -121,6 +127,7 @@ git clone https://github.com/yourusername/vscode_dev_docker.git
 cd vscode_dev_docker
 code .
 # Click "Reopen in Container"
+# Note: Now using Spark 4.0.1 with breaking changes from 3.x
 ```
 
 **System Requirements:**

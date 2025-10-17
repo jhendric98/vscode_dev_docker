@@ -15,7 +15,7 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 # Build arguments for version control
 ARG DEBIAN_FRONTEND=noninteractive
-ARG SPARK_VERSION=3.5.1
+ARG SPARK_VERSION=4.0.1
 ARG HADOOP_VERSION=3
 ARG SPARK_USER=sparkuser
 ARG SPARK_UID=1000

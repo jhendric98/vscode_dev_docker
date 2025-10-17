@@ -6,9 +6,9 @@ scalaVersion := "2.12.18"
 
 // Spark dependencies
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % "3.5.1" % "provided",
-  "org.apache.spark" %% "spark-sql" % "3.5.1" % "provided",
-  "org.apache.spark" %% "spark-mllib" % "3.5.1" % "provided"
+  "org.apache.spark" %% "spark-core" % "4.0.1" % "provided",
+  "org.apache.spark" %% "spark-sql" % "4.0.1" % "provided",
+  "org.apache.spark" %% "spark-mllib" % "4.0.1" % "provided"
 )
 
 // Test dependencies

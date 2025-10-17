@@ -9,7 +9,7 @@ on:
 
 env:
   IMAGE_NAME: spark-dev
-  SPARK_VERSION: 3.5.1
+  SPARK_VERSION: 4.0.1
   HADOOP_VERSION: 3
 
 jobs:

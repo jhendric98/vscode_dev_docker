@@ -1,7 +1,7 @@
 # Apache Spark Dev Container for VS Code
 
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5.1-E25A1C?style=for-the-badge&logo=apache-spark&logoColor=white)](https://spark.apache.org/)
+[![Apache Spark](https://img.shields.io/badge/Apache%20Spark-4.0.1-E25A1C?style=for-the-badge&logo=apache-spark&logoColor=white)](https://spark.apache.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 A production-ready, hardened Docker development container for Apache Spark with Visual Studio Code Remote Containers support. Get started with Spark development in seconds with a fully configured, reproducible environment.
@@ -80,6 +80,9 @@ spark-shell --version
 
 # Run a simple Spark job
 spark-submit --version
+
+# Note: Spark 4.0+ includes breaking changes from 3.x
+# Review migration guide if upgrading existing applications
 ```
 
 ---
@@ -160,7 +163,7 @@ After opening the project in the container:
 java -version        # OpenJDK 11
 scala -version       # Scala 2.13
 python3 --version    # Python 3
-spark-shell --version # Spark 3.5.1
+spark-shell --version # Spark 4.0.1
 ```
 
 ### Running Spark
@@ -241,7 +244,7 @@ Customize the Docker image during build:
 
 ```bash
 docker build \
-  --build-arg SPARK_VERSION=3.5.0 \
+  --build-arg SPARK_VERSION=4.0.1 \
   --build-arg HADOOP_VERSION=3 \
   --build-arg SCALA_VERSION=2.13 \
   -t spark-dev:custom .
@@ -249,7 +252,7 @@ docker build \
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `SPARK_VERSION` | 3.5.1 | Apache Spark version |
+| `SPARK_VERSION` | 4.0.1 | Apache Spark version |
 | `HADOOP_VERSION` | 3 | Hadoop distribution version |
 | `SCALA_VERSION` | 2.13 | Scala version (via Ubuntu) |
 
@@ -295,7 +298,7 @@ Create a `requirements.txt`:
 ```txt
 numpy>=1.21.0
 pandas>=1.3.0
-pyspark==3.5.1
+pyspark==4.0.1
 ```
 
 Update `Dockerfile`:
@@ -321,8 +324,8 @@ RUN apt-get remove -y maven
 | Component | Version | Purpose |
 |-----------|---------|---------|
 | **Base OS** | Ubuntu 22.04 LTS | Stable, long-term support |
-| **Java** | OpenJDK 11 | Spark runtime |
-| **Apache Spark** | 3.5.1 | Big data processing |
+| **Java** | OpenJDK 11 | Spark runtime (Java 21 compatible) |
+| **Apache Spark** | 4.0.1 | Big data processing |
 | **Hadoop** | 3.x | Distributed storage |
 | **Scala** | 2.13 | Spark application development |
 | **Python** | 3.10+ | PySpark development |
@@ -340,7 +343,7 @@ RUN apt-get remove -y maven
 **Problem:** Network timeout during Spark download
 
 ```bash
-Error: Failed to download spark-3.5.1-bin-hadoop3.tgz
+Error: Failed to download spark-4.0.1-bin-hadoop3.tgz
 ```
 
 **Solution:** Try building with a mirror or retry:
@@ -452,6 +455,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 📖 [Documentation](https://github.com/yourusername/vscode_dev_docker/wiki)
 - 🐛 [Issue Tracker](https://github.com/yourusername/vscode_dev_docker/issues)
 - 💬 [Discussions](https://github.com/yourusername/vscode_dev_docker/discussions)
+- 🔄 [Spark 4.0 Migration Guide](SPARK_4_MIGRATION.md)
 - ⭐ Star this repo if you find it useful!
 
 ---
