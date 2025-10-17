@@ -1,44 +1,119 @@
 # syntax=docker/dockerfile:1
+
+# Apache Spark Development Container
+# Optimized for VS Code Remote Containers
+# Security-hardened with non-root user execution
+
 FROM ubuntu:22.04
 
+# Metadata labels
+LABEL maintainer="Your Name <your.email@example.com>"
+LABEL description="Apache Spark development environment for VS Code"
+LABEL version="1.0.0"
+LABEL org.opencontainers.image.source="https://github.com/yourusername/vscode_dev_docker"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Build arguments for version control
 ARG DEBIAN_FRONTEND=noninteractive
 ARG SPARK_VERSION=3.5.1
 ARG HADOOP_VERSION=3
+ARG SPARK_USER=sparkuser
+ARG SPARK_UID=1000
+ARG SPARK_GID=1000
 
+# Environment variables
 ENV SPARK_HOME=/opt/spark \
     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 \
-    PATH=/opt/spark/bin:/opt/spark/sbin:$PATH
+    PATH=/opt/spark/bin:/opt/spark/sbin:$PATH \
+    SPARK_USER=${SPARK_USER} \
+    PYTHONUNBUFFERED=1
 
+# Install system dependencies and development tools
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
         gnupg \
+        lsb-release \
+    # Add SBT repository
     && echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list \
     && echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | tee /etc/apt/sources.list.d/sbt_old.list \
     && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/scalasbt-release.gpg \
+    # Install development tools
     && apt-get update \
     && apt-get install -y --no-install-recommends \
         bash-completion \
         git \
         maven \
         openjdk-11-jdk \
+        procps \
         python3 \
         python3-pip \
+        python3-venv \
         sbt \
         scala \
+        sudo \
+        vim \
         wget \
+    # Clean up to reduce image size
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Download and install Apache Spark
 RUN mkdir -p ${SPARK_HOME} \
     && curl -fsSL "https://downloads.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
         -o /tmp/spark.tgz \
     && tar -xzf /tmp/spark.tgz -C /opt \
     && mv /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} ${SPARK_HOME} \
-    && rm /tmp/spark.tgz
+    && rm /tmp/spark.tgz \
+    # Verify Spark installation
+    && ${SPARK_HOME}/bin/spark-submit --version
 
+# Install Python packages commonly used with Spark
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip3 install --no-cache-dir \
+        pytest \
+        black \
+        flake8 \
+        pylint \
+        ipython \
+        jupyter \
+        numpy \
+        pandas \
+        pyarrow
+
+# Create non-root user for security
+RUN groupadd -r ${SPARK_USER} -g ${SPARK_GID} \
+    && useradd -u ${SPARK_UID} -r -g ${SPARK_USER} -m -d /home/${SPARK_USER} -s /bin/bash ${SPARK_USER} \
+    && echo "${SPARK_USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${SPARK_USER} \
+    && chmod 0440 /etc/sudoers.d/${SPARK_USER}
+
+# Set up workspace directory with proper permissions
+RUN mkdir -p /workspace \
+    && chown -R ${SPARK_USER}:${SPARK_USER} /workspace \
+    && chown -R ${SPARK_USER}:${SPARK_USER} ${SPARK_HOME}
+
+# Set up bash completion for spark user
+RUN echo "source /etc/bash_completion" >> /home/${SPARK_USER}/.bashrc \
+    && echo "export SPARK_HOME=${SPARK_HOME}" >> /home/${SPARK_USER}/.bashrc \
+    && echo "export JAVA_HOME=${JAVA_HOME}" >> /home/${SPARK_USER}/.bashrc
+
+# Switch to non-root user
+USER ${SPARK_USER}
 WORKDIR /workspace
 
+# Health check to verify Spark is operational
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ${SPARK_HOME}/bin/spark-submit --version || exit 1
+
+# Expose common Spark ports
+# 4040: Spark UI
+# 7077: Spark Master
+# 8080: Spark Master Web UI
+# 8081: Spark Worker Web UI
+# 18080: Spark History Server
+EXPOSE 4040 7077 8080 8081 18080
+
+# Default command
 CMD ["/bin/bash"]
