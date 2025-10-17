@@ -1,0 +1,16 @@
+---
+# Hadolint configuration for Dockerfile linting
+# https://github.com/hadolint/hadolint
+
+# Ignore specific rules
+ignored:
+  # DL3008: Pin versions in apt-get install
+  # Rationale: apt package versions change frequently in Ubuntu repositories
+  # and pinning them causes build failures when versions are updated/removed
+  - DL3008
+
+# Optional: Set failure threshold
+failure-threshold: warning
+
+# Strict labels (optional)
+strict-labels: false

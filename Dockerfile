@@ -34,10 +34,10 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # Install system dependencies and development tools
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates=20230311ubuntu0.22.04.1 \
-        curl=7.81.0-1ubuntu1.18 \
-        gnupg=2.2.27-3ubuntu2.1 \
-        lsb-release=11.1.0ubuntu4 \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release \
     # Add SBT repository
     && echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list \
     && echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | tee /etc/apt/sources.list.d/sbt_old.list \
@@ -46,19 +46,19 @@ RUN apt-get update \
     # Install development tools
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        bash-completion=1:2.11-5ubuntu1 \
-        git=1:2.34.1-1ubuntu1.12 \
-        maven=3.6.3-5 \
-        openjdk-11-jdk=11.0.25+9-1ubuntu1~22.04 \
-        procps=2:3.3.17-6ubuntu2.1 \
-        python3=3.10.6-1~22.04.1 \
-        python3-pip=22.0.2+dfsg-1ubuntu0.4 \
-        python3-venv=3.10.6-1~22.04.1 \
-        sbt=1.10.6 \
-        scala=2.11.12-5 \
-        sudo=1.9.9-1ubuntu2.4 \
-        vim=2:8.2.3995-1ubuntu2.22 \
-        wget=1.21.2-2ubuntu1.1 \
+        bash-completion \
+        git \
+        maven \
+        openjdk-11-jdk \
+        procps \
+        python3 \
+        python3-pip \
+        python3-venv \
+        sbt \
+        scala \
+        sudo \
+        vim \
+        wget \
     # Clean up to reduce image size
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
